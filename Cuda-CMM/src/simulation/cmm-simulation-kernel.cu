@@ -363,7 +363,7 @@ __global__ void k_h_sample_from_init(double *Val_out, double *x_y, TCudaGrid2D G
 		switch (init_var_num) {
 			case 0: { Val_out[In] = d_init_vorticity(x_y[2*In], x_y[2*In+1], init_num); break; }
 			case 1: { Val_out[In] = d_init_scalar(x_y[2*In], x_y[2*In+1], init_num); break; }
-			case 2: { Val_out[In] = d_init_distirbution_function(x_y[2*In], x_y[2*In+1], init_num); break; }
+			case 2: { Val_out[In] = d_init_distribution_function(x_y[2*In], x_y[2*In+1], init_num); break; }
 			default:{printf("ERROR initial variable number not known"); }
 		}
 	}

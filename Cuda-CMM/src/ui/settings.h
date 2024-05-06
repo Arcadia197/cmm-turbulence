@@ -22,6 +22,7 @@
 #include <iostream>
 #include <sstream>
 #include "globals.h"
+#include <algorithm> // For std::string operations
 
 #define T_MAX 10000  // maximum time, used to simplify saving and stuff
 
@@ -488,6 +489,9 @@ template<typename Type> std::string str_t (const Type & t)
   os << t;
   return os.str ();
 }
+
+
+void trimSpaces(std::string& input, std::string char_occurence=" ");
 
 
 // little helper function to combine parsing the bool value

@@ -226,6 +226,7 @@ void SettingsCMM::setPresets() {
 	 *  "circular_ring"				-   circular ring around specific center with particles_width as radius
 	 *  "uniform_grid"				-   uniform grid with equal amount of points in x- and y-direction in particular frame
 	 *  "sine_sheets"				-   vortex sheets initial condition
+	 *  "hardcoded"					-   hardcoded particle positions
 	 *
 	 * init_time - when should the computation for the particles start
 	 * init_vel - if the inertial particles velocity should be set after the velocity or to zero
@@ -352,6 +353,9 @@ int SettingsCMM::setVariable(std::string command_full, std::string delimiter) {
 		// construct two substrings
 		std::string command = command_full.substr(0, pos_equal);
 		std::string value = command_full.substr(pos_equal+delimiter.length(), command_full.length());
+		// trim spaces
+		trimSpaces(command); trimSpaces(value);
+
 		// big if else for different commands
 		// this beast is becoming larger and larger, i should convert it to something more automatic
 		// link to site for that: https://stackoverflow.com/questions/4480788/c-c-switch-case-with-string
@@ -580,6 +584,8 @@ void SaveComputational::setVariable(std::string command_full) {
 		// construct two substrings
 		std::string command = command_full.substr(0, pos_equal);
 		std::string value = command_full.substr(pos_equal+1, command_full.length());
+		// trim spaces
+		trimSpaces(command); trimSpaces(value);
 
 		// if else for different commands
 		if (command == "is_instant") is_instant = getBoolFromString(value);
@@ -626,6 +632,8 @@ void SaveSample::setVariable(std::string command_full) {
 		// construct two substrings
 		std::string command = command_full.substr(0, pos_equal);
 		std::string value = command_full.substr(pos_equal+1, command_full.length());
+		// trim spaces
+		trimSpaces(command); trimSpaces(value);
 
 		// if else for different commands
 		if (command == "is_instant") is_instant = getBoolFromString(value);
@@ -672,6 +680,8 @@ void SaveZoom::setVariable(std::string command_full) {
 		// construct two substrings
 		std::string command = command_full.substr(0, pos_equal);
 		std::string value = command_full.substr(pos_equal+1, command_full.length());
+		// trim spaces
+		trimSpaces(command); trimSpaces(value);
 
 		// if else for different commands
 		if (command == "is_instant") is_instant = getBoolFromString(value);
@@ -726,6 +736,8 @@ void ParticlesAdvected::setVariable(std::string command_full) {
 		// construct two substrings
 		std::string command = command_full.substr(0, pos_equal);
 		std::string value = command_full.substr(pos_equal+1, command_full.length());
+		// trim spaces
+		trimSpaces(command); trimSpaces(value);
 
 		// if else for different commands
 		if (command == "num") num = std::stoi(value);
@@ -750,6 +762,7 @@ void ParticlesAdvected::setVariable(std::string command_full) {
 			else if(init_name == "circular_ring") init_num = 2;
 			else if(init_name == "uniform_grid") init_num = 3;
 			else if(init_name == "sine_sheets") init_num = 4;
+			else if(init_name == "hardcoded") init_num = 5;
 			else init_num = -1;
 		}
 		else if (command == "init_time") init_time = stod(value);
@@ -796,6 +809,8 @@ void ParticlesForwarded::setVariable(std::string command_full) {
 		// construct two substrings
 		std::string command = command_full.substr(0, pos_equal);
 		std::string value = command_full.substr(pos_equal+1, command_full.length());
+		// trim spaces
+		trimSpaces(command); trimSpaces(value);
 
 		// if else for different commands
 		if (command == "num") num = std::stoi(value);
@@ -807,6 +822,7 @@ void ParticlesForwarded::setVariable(std::string command_full) {
 			else if(init_name == "circular_ring") init_num = 2;
 			else if(init_name == "uniform_grid") init_num = 3;
 			else if(init_name == "sine_sheets") init_num = 4;
+			else if(init_name == "hardcoded") init_num = 5;
 			else init_num = -1;
 		}
 		else if (command == "init_time") init_time = stod(value);
@@ -821,6 +837,13 @@ std::string ParticlesForwarded::getVariables() {
 	os << "{num=" << str_t(num) << ",seed=" << str_t(seed) << ",init_name=" << init_name << ",init_time=" << str_t(init_time);
 	os << ",init_param_1=" << str_t(init_param_1) << ",init_param_2=" << str_t(init_param_2) << ",init_param_3=" << str_t(init_param_3) << ",init_param_4=" << str_t(init_param_4) << "}";
 	return os.str();
+}
+
+
+void trimSpaces(std::string& input, std::string char_occurence) {
+    // Remove leading and trailing spaces from input
+    input.erase(0, input.find_first_not_of(char_occurence)); // leading spaces
+    input.erase(input.find_last_not_of(char_occurence) + 1); // trailing spaces
 }
 
 

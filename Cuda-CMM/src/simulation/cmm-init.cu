@@ -90,7 +90,8 @@ __device__ double d_init_vorticity(double x, double y, int simulation_num)
 		{
 			//three vortices
 			double ret = 0;
-			double delta = 1/PI;
+			double delta = 1/d_init_params[0];  // size of vortices
+			double A = d_init_params[1];  // strength
 			double LX = PI/4;
 			double LY = PI*(1.0+sqrt(2.0)/4.0);
 
@@ -98,9 +99,9 @@ __device__ double d_init_vorticity(double x, double y, int simulation_num)
 			for(int iy = -1; iy <= 1; iy++)
 				for(int ix = -1; ix <= 1; ix++)
 				{
-					ret += PI     * exp(-(((x + twoPI*ix) - (PI-LX))*((x + twoPI*ix) - (PI-LX)) + ((y + twoPI*iy) - PI)*((y + twoPI*iy) - PI))/(delta*delta))
-						 + PI     *	exp(-(((x + twoPI*ix) - (PI+LX))*((x + twoPI*ix) - (PI+LX)) + ((y + twoPI*iy) - PI)*((y + twoPI*iy) - PI))/(delta*delta))
-						 - PI/2.0 * exp(-(((x + twoPI*ix) - (PI+LX))*((x + twoPI*ix) - (PI+LX)) + ((y + twoPI*iy) - LY)*((y + twoPI*iy) - LY))/(delta*delta));
+					ret += -A     * exp(-(((x + twoPI*ix) - (PI-LX))*((x + twoPI*ix) - (PI-LX)) + ((y + twoPI*iy) - PI)*((y + twoPI*iy) - PI))/(delta*delta))
+						   -A     * exp(-(((x + twoPI*ix) - (PI+LX))*((x + twoPI*ix) - (PI+LX)) + ((y + twoPI*iy) - PI)*((y + twoPI*iy) - PI))/(delta*delta))
+						   +A/2.0 * exp(-(((x + twoPI*ix) - (PI+LX))*((x + twoPI*ix) - (PI+LX)) + ((y + twoPI*iy) - LY)*((y + twoPI*iy) - LY))/(delta*delta));
 				}
 			return ret;
 			break;
@@ -391,6 +392,10 @@ __host__ void init_particles(SettingsCMM SettingsMain, CmmPart Part, TCudaGrid2D
 		{
 			k_part_init_sine_sheets<<<Part.block, Part.thread>>>(num, Part.Dev_var, Grid); break;
 		}
+		case 5:  // hardcoded
+		{
+			k_part_init_hardcoded<<<Part.block, Part.thread>>>(num, Part.Dev_var, Grid); break;
+		}
 
 		default:
 			break;
@@ -459,11 +464,54 @@ __global__ void k_part_init_sine_sheets(int particle_num, double* Dev_particles_
 	Dev_particles_pos[2*i+1] = part_pos_old[1] - floor((part_pos_old[1] - Grid.bounds[2])/LY)*LY;
 }
 
+// this kernel is a hack - we basically can hardcoded positions here
+// used for following the centers of vortices, for example three vortices
+// type is defined by d_p_init_parameter[0]
+__global__ void k_part_init_hardcoded(int particle_num, double* Dev_particles_pos, TCudaGrid2D Grid) {
+	int i = (blockDim.x * blockIdx.x + threadIdx.x);  // (thread_num_max * block_num + thread_num) - gives position
+
+	// return if position is larger than particle size
+	if (i >= particle_num)
+		return;
+
+	double part_pos_old[2];
+	// enable different ideas with first init parameter
+	if (d_p_init_parameter[0] == 0.0) {
+		switch (i) {
+			case 0:  // first vortex center
+				part_pos_old[0] = PI * 3.0/4.0;
+				part_pos_old[1] = PI;
+				break;
+			case 1:  // second vortex center
+				part_pos_old[0] = PI * 5.0/4.0;
+				part_pos_old[1] = PI;
+				break;
+			case 2:  // third vortex center
+				part_pos_old[0] = PI * 5.0/4.0;
+				part_pos_old[1] = PI * (1.0+sqrt(2.0)/4.0);
+				break;
+			default:
+				part_pos_old[0] = 0;
+				part_pos_old[1] = 0;
+				break;
+		}
+	}
+	else {
+		part_pos_old[0] = 0;
+		part_pos_old[1] = 0;
+	}
+
+	double LX = Grid.bounds[1] - Grid.bounds[0]; double LY = Grid.bounds[3] - Grid.bounds[2];
+	// warping - translate by domain size(s)
+	Dev_particles_pos[2*i]   = part_pos_old[0] - floor((part_pos_old[0] - Grid.bounds[0])/LX)*LX;
+	Dev_particles_pos[2*i+1] = part_pos_old[1] - floor((part_pos_old[1] - Grid.bounds[2])/LY)*LY;
+}
+
 /*******************************************************************
 *			Initial condition for distirbution_function			   *
 *******************************************************************/
 
-__device__ double d_init_distirbution_function(double x, double v, int simulation_num)
+__device__ double d_init_distribution_function(double x, double v, int simulation_num)
 {
 	/*
 	 *  Initial conditions for vorticity

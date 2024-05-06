@@ -25,12 +25,12 @@
 const int param_version = 3;
 const std::string param_header_line = "CMM Parameter file";
 const std::string param_command = "param_version";
-const std::string param_delimiter = "\t=\t";
+const std::string param_delimiters[2] = {"\t=\t", " = "};
 
 // because I have to use this many times, this just makes it easier and more readable
 std::string write_line(std::string param_name, std::string param_value) {
 	std::ostringstream os;
-	os << param_name << param_delimiter << param_value << "\n";
+	os << param_name << param_delimiters[0] << param_value << "\n";
 	return os.str ();
 }
 
@@ -165,60 +165,66 @@ void load_param_file(SettingsCMM& SettingsMain, std::string param_name) {
 		if (file_line == param_header_line) {
 			// check for version with next line
 			getline(file, file_line);
-			int pos_equal = file_line.find(param_delimiter);
-			if (pos_equal != std::string::npos) {
-				// construct two substrings
-				std::string command = file_line.substr(0, pos_equal);
-				std::string value = file_line.substr(pos_equal+param_delimiter.length(), file_line.length());
 
-				if (command == param_command) {
-					param_version = std::stoi(value);
+			// loop over delimiters that we allow to work
+			for (int i_del_type = 0; i_del_type < 1; ++i_del_type) {
+				std::string del_now = param_delimiters[i_del_type];
 
-					// skip third line
-					getline(file, file_line);
+				int pos_equal = file_line.find(del_now);
+				if (pos_equal != std::string::npos) {
+					// construct two substrings
+					std::string command = file_line.substr(0, pos_equal);
+					std::string value = file_line.substr(pos_equal+del_now.length(), file_line.length());
 
-					// now read in all the values
-					while(getline(file, file_line)){ //read data from file object and put it into string.
-						int set_save = SettingsMain.setVariable(file_line, param_delimiter);
-						if (set_save == 1) {
-							for (int i_save = 0; i_save < SettingsMain.getSaveComputationalNum(); ++i_save) {
-								getline(file, file_line);
-								SettingsMain.setSaveComputational(file_line, param_delimiter, i_save);
-							}
-						}
-						else if (set_save == 2) {
-							for (int i_save = 0; i_save < SettingsMain.getSaveSampleNum(); ++i_save) {
-								getline(file, file_line);
-								SettingsMain.setSaveSample(file_line, param_delimiter, i_save);
-							}
-						}
-						else if (set_save == 3) {
-							for (int i_save = 0; i_save < SettingsMain.getSaveZoomNum(); ++i_save) {
-								getline(file, file_line);
-								SettingsMain.setSaveZoom(file_line, param_delimiter, i_save);
-							}
-						}
-						else if (set_save == 4) {
-							for (int i_save = 0; i_save < SettingsMain.getParticlesAdvectedNum(); ++i_save) {
-								getline(file, file_line);
-								SettingsMain.setParticlesAdvected(file_line, param_delimiter, i_save);
-							}
-						}
-						else if (set_save == 5) {
-							for (int i_save = 0; i_save < SettingsMain.getParticlesForwardedNum(); ++i_save) {
-								getline(file, file_line);
-								SettingsMain.setParticlesForwarded(file_line, param_delimiter, i_save);
-							}
-						}
-					}
+					if (command == param_command) {
+						param_version = std::stoi(value);
 
-					// here, future settings for newer param-file versions could be implemented for example to disable stuff by default
-					if (param_version < 2) {
-						std::cout<<"Param-file version < 2: Save settings cannot be set." << std::endl;
-					}
-					if (param_version < 3) {
-						std::cout<<"Param-file version < 3: Initial condition parameters cannot be set."
-							"Check cmm-init.cu if the initial conditions contains parameters that need to be set" << std::endl;
+						// skip third line
+						getline(file, file_line);
+
+						// now read in all the values
+						while(getline(file, file_line)){ //read data from file object and put it into string.
+							int set_save = SettingsMain.setVariable(file_line, del_now);
+							if (set_save == 1) {
+								for (int i_save = 0; i_save < SettingsMain.getSaveComputationalNum(); ++i_save) {
+									getline(file, file_line);
+									SettingsMain.setSaveComputational(file_line, del_now, i_save);
+								}
+							}
+							else if (set_save == 2) {
+								for (int i_save = 0; i_save < SettingsMain.getSaveSampleNum(); ++i_save) {
+									getline(file, file_line);
+									SettingsMain.setSaveSample(file_line, del_now, i_save);
+								}
+							}
+							else if (set_save == 3) {
+								for (int i_save = 0; i_save < SettingsMain.getSaveZoomNum(); ++i_save) {
+									getline(file, file_line);
+									SettingsMain.setSaveZoom(file_line, del_now, i_save);
+								}
+							}
+							else if (set_save == 4) {
+								for (int i_save = 0; i_save < SettingsMain.getParticlesAdvectedNum(); ++i_save) {
+									getline(file, file_line);
+									SettingsMain.setParticlesAdvected(file_line, del_now, i_save);
+								}
+							}
+							else if (set_save == 5) {
+								for (int i_save = 0; i_save < SettingsMain.getParticlesForwardedNum(); ++i_save) {
+									getline(file, file_line);
+									SettingsMain.setParticlesForwarded(file_line, del_now, i_save);
+								}
+							}
+						}
+
+						// here, future settings for newer param-file versions could be implemented for example to disable stuff by default
+						if (param_version < 2) {
+							std::cout<<"Param-file version < 2: Save settings cannot be set." << std::endl;
+						}
+						if (param_version < 3) {
+							std::cout<<"Param-file version < 3: Initial condition parameters cannot be set."
+								"Check cmm-init.cu if the initial conditions contains parameters that need to be set" << std::endl;
+						}
 					}
 				}
 			}
